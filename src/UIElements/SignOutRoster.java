@@ -5,6 +5,8 @@ import UIElements.SignOutRecord;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 
 public class SignOutRoster extends JList<SignOutRecord> {
@@ -15,6 +17,13 @@ public class SignOutRoster extends JList<SignOutRecord> {
         model = new DefaultListModel<>();
         setModel(model);
 
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                //TODO make the pin feild grab focus when a item is selected on the roster
+            }
+        });
+
         setCellRenderer(new ModernRosterCellRenderer());
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         setBackground(UITheme.PANEL_BACKGROUND);
@@ -24,7 +33,7 @@ public class SignOutRoster extends JList<SignOutRecord> {
         signOut(new SignOutRecord("Bodden, Martin, Gallagher", "Troop Store", "717-330-3661"));
         signOut(new SignOutRecord("Gonzalez, Drose", "Off Post/Mall", "198-986-8987"));
         signOut(new SignOutRecord("Augstin, Ponstein", "Qudoba", "823-812-1239"));
-        signOut(new SignOutRecord("Petrilli, Siso, Wall, Garza", "Off post/Buffalo wild Wings", "782-178-1287"));
+        signOut(new SignOutRecord("Petrilli, Siso, Wall, Garza", "Off post", "782-178-1287"));
         signOut(new SignOutRecord("Johnson, Padrone", "Dominos", "123-123-1234"));
         signOut(new SignOutRecord("Ray, Combs", "PX", "823-812-1239"));
         signOut(new SignOutRecord("Byam, Bus", "Dominos", "999-999-9999"));
@@ -56,21 +65,21 @@ public class SignOutRoster extends JList<SignOutRecord> {
             setOpaque(false);
             setBorder(UITheme.createEmptyBorder(new Insets(UITheme.SPACING_LG, UITheme.SPACING_XL, UITheme.SPACING_LG, UITheme.SPACING_XL)));
 
-            statusIndicator = new JPanel() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    Graphics2D g2d = (Graphics2D) g.create();
-                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                    Color indicatorColor = isSelected ? UITheme.STATUS_SELECTED : UITheme.STATUS_SIGNED_OUT;
-                    g2d.setColor(indicatorColor);
-                    g2d.fillOval(2, getHeight() / 2 - 4, 8, 8);
-
-                    g2d.dispose();
-                }
-            };
-            statusIndicator.setPreferredSize(UITheme.STATUS_INDICATOR_SIZE);
-            statusIndicator.setOpaque(false);
+//            statusIndicator = new JPanel() {
+//                @Override
+//                protected void paintComponent(Graphics g) {
+//                    Graphics2D g2d = (Graphics2D) g.create();
+//                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+//
+//                    Color indicatorColor = isSelected ? UITheme.STATUS_SELECTED : UITheme.STATUS_SIGNED_OUT;
+//                    g2d.setColor(indicatorColor);
+//                    g2d.fillOval(2, getHeight() / 2 - 4, 8, 8);
+//
+//                    g2d.dispose();
+//                }
+//            };
+//            statusIndicator.setPreferredSize(UITheme.STATUS_INDICATOR_SIZE);
+//            statusIndicator.setOpaque(false);
 
             // Main content panel with horizontal layout
             JPanel contentPanel = new JPanel(new BorderLayout(UITheme.SPACING_MD, 0));
@@ -81,7 +90,7 @@ public class SignOutRoster extends JList<SignOutRecord> {
             nameLabel.setFont(UITheme.FONT_LIST_ITEM_NAME);
             nameLabel.setForeground(UITheme.TEXT_PRIMARY);
             nameLabel.setHorizontalAlignment(SwingConstants.LEFT);
-            nameLabel.setPreferredSize(new Dimension(200, 0)); // Fixed width for consistent alignment
+//            nameLabel.setPreferredSize(new Dimension(400, 0)); // Fixed width for consistent alignment
 
             // Location label (center)
             locationLabel = new JLabel();
@@ -96,11 +105,11 @@ public class SignOutRoster extends JList<SignOutRecord> {
             phoneLabel.setHorizontalAlignment(SwingConstants.RIGHT);
             phoneLabel.setPreferredSize(new Dimension(120, 0)); // Fixed width for consistent alignment
 
-            contentPanel.add(nameLabel, BorderLayout.WEST);
-            contentPanel.add(locationLabel, BorderLayout.CENTER);
+            add(nameLabel, BorderLayout.WEST);
+            contentPanel.add(locationLabel, BorderLayout.WEST);
             contentPanel.add(phoneLabel, BorderLayout.EAST);
 
-            add(statusIndicator, BorderLayout.WEST);
+//            add(statusIndicator, BorderLayout.WEST);
             add(contentPanel, BorderLayout.CENTER);
         }
 

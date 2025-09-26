@@ -22,7 +22,7 @@ public class MainWindow extends JFrame {
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setAlwaysOnTop(true);
-        setSize((int) (getToolkit().getScreenSize().width*.8), (int) (getToolkit().getScreenSize().height*.8));
+        setSize((int) (getToolkit().getScreenSize().width*.8), (int) (getToolkit().getScreenSize().height*.75));
 
         setLayout(new BorderLayout());
 
@@ -69,7 +69,6 @@ public class MainWindow extends JFrame {
                 }
             }
 
-            showModernDialog("No matching user found.", "Search Result", JOptionPane.INFORMATION_MESSAGE);
         };
 
         searchButton.addActionListener(e -> doSearch.run());
