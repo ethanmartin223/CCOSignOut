@@ -56,7 +56,6 @@ public class SignOutRoster extends JList<SignOutRecord> {
             setOpaque(false);
             setBorder(UITheme.createEmptyBorder(new Insets(UITheme.SPACING_LG, UITheme.SPACING_XL, UITheme.SPACING_LG, UITheme.SPACING_XL)));
 
-            // Status indicator (left side)
             statusIndicator = new JPanel() {
                 @Override
                 protected void paintComponent(Graphics g) {

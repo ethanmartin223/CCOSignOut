@@ -1,7 +1,9 @@
 package UIElements;
 
 import javax.swing.*;
+import javax.swing.border.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +19,9 @@ public class SignOutOptions extends JPanel {
 
     private Map<String, String> userPins;
     private boolean pinFieldError = false;
+    private boolean locationError = false;
+    private boolean nameError = false;
+    private boolean phoneError = false;
 
     public SignOutOptions(SignOutRoster roster) {
         this.roster = roster;
@@ -55,6 +60,22 @@ public class SignOutOptions extends JPanel {
         contentPanel.add(authSection, BorderLayout.CENTER);
         contentPanel.add(buttonSection, BorderLayout.SOUTH);
 
+        nameField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                clearNameError();
+            }
+        });
+        locationField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                clearLocationError();
+            }
+        });
+        phoneField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                clearPhoneError();
+            }
+        });
+
         mainPanel.add(contentPanel, BorderLayout.CENTER);
         add(mainPanel, BorderLayout.CENTER);
     }
@@ -84,15 +105,12 @@ public class SignOutOptions extends JPanel {
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.setOpaque(false);
 
-        // Name field
         formPanel.add(createFieldGroup("Names", nameField = createModernTextField("Scan CAC")));
         formPanel.add(Box.createVerticalStrut(UITheme.SPACING_LG));
 
-        // Location field
         formPanel.add(createFieldGroup("Location", locationField = createModernTextField("Where are you going?")));
         formPanel.add(Box.createVerticalStrut(UITheme.SPACING_LG));
 
-        // Phone field
         formPanel.add(createFieldGroup("Phone Number", phoneField = createModernTextField("Contact number")));
 
         return formPanel;
@@ -104,11 +122,9 @@ public class SignOutOptions extends JPanel {
         authPanel.setOpaque(false);
         authPanel.setBorder(UITheme.createSectionBorder());
 
-        // User dropdown
-        authPanel.add(createFieldGroup("User", userDropdown = createModernDropdown()));
+        authPanel.add(createFieldGroup("Drill SGT", userDropdown = createModernDropdown()));
         authPanel.add(Box.createVerticalStrut(UITheme.SPACING_LG));
 
-        // PIN field
         authPanel.add(createFieldGroup("PIN", pinField = createModernPasswordField()));
 
         return authPanel;
@@ -125,7 +141,6 @@ public class SignOutOptions extends JPanel {
         buttonPanel.add(signOutButton);
         buttonPanel.add(signInButton);
 
-        // Button actions
         signOutButton.addActionListener(e -> handleSignOut());
         signInButton.addActionListener(e -> handleSignIn());
 
@@ -219,10 +234,7 @@ public class SignOutOptions extends JPanel {
 
                 // Set border color based on error state
                 Color borderColor;
-                if (pinFieldError) {
-                    borderColor = new Color(220, 53, 69); // Red error color
-                    g2d.setStroke(new BasicStroke(2.0f));
-                } else if (hasFocus()) {
+                if (hasFocus()) {
                     borderColor = UITheme.BORDER_FOCUS;
                     g2d.setStroke(UITheme.BORDER_STROKE_FOCUS);
                 } else {
@@ -244,11 +256,22 @@ public class SignOutOptions extends JPanel {
         field.setBorder(UITheme.createEmptyBorder(UITheme.INPUT_PADDING));
         field.setBackground(UITheme.INPUT_BACKGROUND);
         field.setForeground(UITheme.TEXT_PRIMARY);
-
-        // Add focus listener to clear error state when user starts typing
         field.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 clearPinError();
+            }
+        });
+        field.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    if (!getFieldText(phoneField).isEmpty() ||
+                            !getFieldText(nameField).isEmpty() ||
+                            !getFieldText(locationField).isEmpty()) {
+                        handleSignOut();
+                    } else if (roster.getSelectedRecord() != null) {
+                        handleSignIn();
+                    }
+                }
             }
         });
 
@@ -371,13 +394,10 @@ public class SignOutOptions extends JPanel {
         String name = getFieldText(nameField);
         String location = getFieldText(locationField);
         String phone = getFieldText(phoneField);
-
         if (name.isEmpty() || location.isEmpty() || phone.isEmpty()) {
-            showModernDialog(
-                    "All fields (Name, Location, Phone) must be filled before signing out.",
-                    "Missing Information",
-                    JOptionPane.WARNING_MESSAGE
-            );
+            if (name.isEmpty()) triggerNameError();
+            if (location.isEmpty()) triggerLocationError();
+            if (phone.isEmpty()) triggerPhoneError();
             return;
         }
 
@@ -405,7 +425,7 @@ public class SignOutOptions extends JPanel {
 
     private String getFieldText(JTextField field) {
         String text = field.getText().trim();
-        if (text.equals("Enter full name") || text.equals("Where are you going?") || text.equals("Contact number")) {
+        if (text.equals("Scan CAC") || text.equals("Where are you going?") || text.equals("Contact number")) {
             return "";
         }
         return text;
@@ -421,11 +441,7 @@ public class SignOutOptions extends JPanel {
         String enteredPin = new String(pinField.getPassword());
 
         if (user == null || enteredPin.isEmpty()) {
-            showModernDialog(
-                    "Please select a user and enter their PIN.",
-                    "Authentication Required",
-                    JOptionPane.WARNING_MESSAGE
-            );
+            triggerPinError();
             pinField.setText("");
             return false;
         }
@@ -434,11 +450,6 @@ public class SignOutOptions extends JPanel {
         if (!enteredPin.equals(correctPin)) {
             triggerPinError();
 
-            showModernDialog(
-                    "Invalid PIN for user " + user + ".",
-                    "Authentication Failed",
-                    JOptionPane.ERROR_MESSAGE
-            );
             pinField.setText("");
             return false;
         }
@@ -447,11 +458,11 @@ public class SignOutOptions extends JPanel {
         return true;
     }
 
+
     private void triggerPinError() {
         pinFieldError = true;
         pinField.repaint();
 
-        // Create shake animation
         Point originalLocation = pinField.getLocation();
         Timer shakeTimer = new Timer(50, null);
         final int[] shakeCount = {0};
@@ -459,6 +470,7 @@ public class SignOutOptions extends JPanel {
         final int shakeDistance = 5;
 
         shakeTimer.addActionListener(e -> {
+            setErrorBorder(pinField);
             if (shakeCount[0] < maxShakes) {
                 int offset = (shakeCount[0] % 2 == 0) ? shakeDistance : -shakeDistance;
                 pinField.setLocation(originalLocation.x + offset, originalLocation.y);
@@ -467,7 +479,6 @@ public class SignOutOptions extends JPanel {
                 pinField.setLocation(originalLocation);
                 shakeTimer.stop();
 
-                // Clear error state after a delay
                 Timer clearTimer = new Timer(2000, clearEvent -> {
                     clearPinError();
                     ((Timer) clearEvent.getSource()).stop();
@@ -480,12 +491,78 @@ public class SignOutOptions extends JPanel {
         shakeTimer.start();
     }
 
+    private void setErrorBorder(JTextField pinField) {
+        EmptyBorder emptyBorder = new MatteBorder(3,3,3,3, UITheme.ACCENT_RED);
+        EmptyBorder emptyBorder2 = new EmptyBorder(
+                UITheme.INPUT_PADDING.top-3,
+                UITheme.INPUT_PADDING.left-3,
+                UITheme.INPUT_PADDING.bottom-3,
+                UITheme.INPUT_PADDING.right-3);
+        pinField.setBorder(new CompoundBorder(emptyBorder, emptyBorder2));
+    }
+
+    private void triggerLocationError() {
+        locationError = true;
+
+        setErrorBorder(locationField);
+        Timer clearTimer = new Timer(2000, clearEvent -> {
+            clearLocationError();
+            ((Timer) clearEvent.getSource()).stop();
+        });
+        clearTimer.setRepeats(false);
+        clearTimer.start();
+
+    }
+
+    private void triggerPhoneError() {
+        phoneError = true;
+        setErrorBorder(phoneField);
+        Timer clearTimer = new Timer(2000, clearEvent -> {
+            clearPhoneError();
+            ((Timer) clearEvent.getSource()).stop();
+        });
+        clearTimer.setRepeats(false);
+        clearTimer.start();
+    }
+
+    private void triggerNameError() {
+        nameError = true;
+        setErrorBorder(nameField);
+        Timer clearTimer = new Timer(2000, clearEvent -> {
+            clearNameError();
+            ((Timer) clearEvent.getSource()).stop();
+        });
+        clearTimer.setRepeats(false);
+        clearTimer.start();
+
+    }
     private void clearPinError() {
         if (pinFieldError) {
             pinFieldError = false;
+            pinField.setBorder(UITheme.createEmptyBorder(UITheme.INPUT_PADDING));
             pinField.repaint();
         }
     }
+    private void clearLocationError() {
+        if (locationError) {
+            locationError = false;
+            locationField.setBorder(UITheme.createEmptyBorder(UITheme.INPUT_PADDING));
+            locationField.repaint();
+        }
+    }private void clearPhoneError() {
+        if (phoneError) {
+            phoneError = false;
+            phoneField.setBorder(UITheme.createEmptyBorder(UITheme.INPUT_PADDING));
+            phoneField.repaint();
+        }
+    }private void clearNameError() {
+        if (nameError) {
+            nameError = false;
+            nameField.setBorder(UITheme.createEmptyBorder(UITheme.INPUT_PADDING));
+            nameField.repaint();
+        }
+    }
+
 
     private void showModernDialog(String message, String title, int messageType) {
         JOptionPane.showMessageDialog(this, message, title, messageType);

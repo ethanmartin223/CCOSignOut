@@ -22,14 +22,14 @@ public class MainWindow extends JFrame {
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setAlwaysOnTop(true);
-        setSize(getToolkit().getScreenSize().width, getToolkit().getScreenSize().height);
+        setSize((int) (getToolkit().getScreenSize().width*.8), (int) (getToolkit().getScreenSize().height*.8));
 
         setLayout(new BorderLayout());
 
         getContentPane().setBackground(UITheme.MAIN_BACKGROUND);
 
-        JPanel titleBar = createTitleBar();
-        add(titleBar, BorderLayout.NORTH);
+//        JPanel titleBar = createTitleBar();
+//        add(titleBar, BorderLayout.NORTH);
 
         // --- Roster + Search Panel ---
         roster = new SignOutRoster();
@@ -228,7 +228,7 @@ public class MainWindow extends JFrame {
 
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
             e.printStackTrace();
         }
