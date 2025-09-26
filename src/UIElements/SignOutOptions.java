@@ -367,6 +367,7 @@ public class SignOutOptions extends JPanel {
         SignOutRecord record = new SignOutRecord(name, location, phone);
         roster.signOut(record);
 
+        // Reset fields
         clearField(nameField, "Enter full name");
         clearField(locationField, "Where are you going?");
         clearField(phoneField, "Contact number");

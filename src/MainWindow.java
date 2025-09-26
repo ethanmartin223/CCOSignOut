@@ -15,9 +15,13 @@ public class MainWindow extends JFrame {
     public MainWindow() {
         super();
 
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
+
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(getToolkit().getScreenSize().width, getToolkit().getScreenSize().height);
         setAlwaysOnTop(true);
+        gd.setFullScreenWindow(this);
         setLayout(new BorderLayout());
 
         getContentPane().setBackground(UITheme.MAIN_BACKGROUND);
