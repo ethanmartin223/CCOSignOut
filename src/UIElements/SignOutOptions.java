@@ -16,6 +16,7 @@ public class SignOutOptions extends JPanel {
     private JPasswordField pinField;
 
     private Map<String, String> userPins;
+    private boolean pinFieldError = false;
 
     public SignOutOptions(SignOutRoster roster) {
         this.roster = roster;
@@ -210,17 +211,26 @@ public class SignOutOptions extends JPanel {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                g2d.setColor(getBackground());
+                // Set background color based on error state
+                Color bgColor = pinFieldError ? new Color(255, 240, 240) : getBackground();
+                g2d.setColor(bgColor);
                 g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(),
                         UITheme.BORDER_RADIUS_MEDIUM, UITheme.BORDER_RADIUS_MEDIUM));
 
-                if (hasFocus()) {
-                    g2d.setColor(UITheme.BORDER_FOCUS);
+                // Set border color based on error state
+                Color borderColor;
+                if (pinFieldError) {
+                    borderColor = new Color(220, 53, 69); // Red error color
+                    g2d.setStroke(new BasicStroke(2.0f));
+                } else if (hasFocus()) {
+                    borderColor = UITheme.BORDER_FOCUS;
                     g2d.setStroke(UITheme.BORDER_STROKE_FOCUS);
                 } else {
-                    g2d.setColor(UITheme.BORDER_LIGHT);
+                    borderColor = UITheme.BORDER_LIGHT;
                     g2d.setStroke(UITheme.BORDER_STROKE_DEFAULT);
                 }
+
+                g2d.setColor(borderColor);
                 g2d.draw(new RoundRectangle2D.Float(1, 1, getWidth() - 2, getHeight() - 2,
                         UITheme.BORDER_RADIUS_SMALL, UITheme.BORDER_RADIUS_SMALL));
 
@@ -234,6 +244,13 @@ public class SignOutOptions extends JPanel {
         field.setBorder(UITheme.createEmptyBorder(UITheme.INPUT_PADDING));
         field.setBackground(UITheme.INPUT_BACKGROUND);
         field.setForeground(UITheme.TEXT_PRIMARY);
+
+        // Add focus listener to clear error state when user starts typing
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                clearPinError();
+            }
+        });
 
         return field;
     }
@@ -367,7 +384,6 @@ public class SignOutOptions extends JPanel {
         SignOutRecord record = new SignOutRecord(name, location, phone);
         roster.signOut(record);
 
-        // Reset fields
         clearField(nameField, "Enter full name");
         clearField(locationField, "Where are you going?");
         clearField(phoneField, "Contact number");
@@ -416,6 +432,8 @@ public class SignOutOptions extends JPanel {
 
         String correctPin = userPins.get(user);
         if (!enteredPin.equals(correctPin)) {
+            triggerPinError();
+
             showModernDialog(
                     "Invalid PIN for user " + user + ".",
                     "Authentication Failed",
@@ -427,6 +445,46 @@ public class SignOutOptions extends JPanel {
 
         pinField.setText("");
         return true;
+    }
+
+    private void triggerPinError() {
+        pinFieldError = true;
+        pinField.repaint();
+
+        // Create shake animation
+        Point originalLocation = pinField.getLocation();
+        Timer shakeTimer = new Timer(50, null);
+        final int[] shakeCount = {0};
+        final int maxShakes = 6;
+        final int shakeDistance = 5;
+
+        shakeTimer.addActionListener(e -> {
+            if (shakeCount[0] < maxShakes) {
+                int offset = (shakeCount[0] % 2 == 0) ? shakeDistance : -shakeDistance;
+                pinField.setLocation(originalLocation.x + offset, originalLocation.y);
+                shakeCount[0]++;
+            } else {
+                pinField.setLocation(originalLocation);
+                shakeTimer.stop();
+
+                // Clear error state after a delay
+                Timer clearTimer = new Timer(2000, clearEvent -> {
+                    clearPinError();
+                    ((Timer) clearEvent.getSource()).stop();
+                });
+                clearTimer.setRepeats(false);
+                clearTimer.start();
+            }
+        });
+
+        shakeTimer.start();
+    }
+
+    private void clearPinError() {
+        if (pinFieldError) {
+            pinFieldError = false;
+            pinField.repaint();
+        }
     }
 
     private void showModernDialog(String message, String title, int messageType) {
