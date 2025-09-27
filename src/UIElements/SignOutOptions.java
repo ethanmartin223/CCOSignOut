@@ -3,8 +3,17 @@ package UIElements;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,14 +32,43 @@ public class SignOutOptions extends JPanel {
     private boolean nameError = false;
     private boolean phoneError = false;
 
+    public static HashMap<String, String> loadUserPins(File file) {
+        HashMap<String, String> userPins = new HashMap<>();
+
+        if (!file.exists()) {
+            System.out.println("PIN file not found: " + file.getAbsolutePath());
+            return userPins;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue; // skip empty or comment lines
+
+                String[] parts = line.split(":", 2); // only split at the first ':'
+                if (parts.length == 2) {
+                    String name = parts[0].trim();
+                    String pin = parts[1].trim();
+                    userPins.put(name, pin);
+                } else {
+                    System.out.println("⚠️ Invalid line in PIN file: " + line);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return userPins;
+    }
+
     public SignOutOptions(SignOutRoster roster) {
         this.roster = roster;
+        roster.signOutOptions = this;
 
-        userPins = new HashMap<>();
-        userPins.put("DS Wright", "1234");
-        userPins.put("DS Koch", "1234");
-        userPins.put("DS Brody", "1234");
-        userPins.put("DS Kuipers", "1234");
+        userPins = loadUserPins(new File("user_pins.txt"));
+
 
         setLayout(new BorderLayout());
         setPreferredSize(UITheme.OPTIONS_PANEL_SIZE);
@@ -118,12 +156,25 @@ public class SignOutOptions extends JPanel {
 
     private JPanel createAuthSection() {
         JPanel authPanel = new JPanel();
+
         authPanel.setLayout(new BoxLayout(authPanel, BoxLayout.Y_AXIS));
         authPanel.setOpaque(false);
         authPanel.setBorder(UITheme.createSectionBorder());
 
-        authPanel.add(createFieldGroup("Drill SGT", userDropdown = createModernDropdown()));
+        JLabel titleLabel = new JLabel("Drill SGT Options");
+        titleLabel.setFont(UITheme.FONT_SECTION_TITLE);
+        titleLabel.setForeground(UITheme.TEXT_PRIMARY);
+
+        JPanel titleContent = new JPanel();
+        titleContent.setLayout(new BorderLayout());
+        titleContent.setOpaque(false);
+        titleContent.add(titleLabel);
+        titleContent.setBorder(UITheme.createEmptyBorder(new Insets(0, 0, UITheme.SPACING_XL, 0)));
+        authPanel.add(titleContent);
+
+        authPanel.add(createFieldGroup("User", userDropdown = createModernDropdown()));
         authPanel.add(Box.createVerticalStrut(UITheme.SPACING_LG));
+
 
         authPanel.add(createFieldGroup("PIN", pinField = createModernPasswordField()));
 
@@ -213,6 +264,17 @@ public class SignOutOptions extends JPanel {
         field.setBorder(UITheme.createEmptyBorder(UITheme.INPUT_PADDING));
         field.setBackground(UITheme.INPUT_BACKGROUND);
         field.setForeground(UITheme.TEXT_PRIMARY);
+        field.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                roster.clearSelection();
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+
+            }
+        });
 
         // Placeholder functionality
         setupPlaceholder(field, placeholder);
@@ -251,7 +313,7 @@ public class SignOutOptions extends JPanel {
             }
         };
 
-        field.setPreferredSize(new Dimension(0, UITheme.INPUT_HEIGHT));
+        field.setPreferredSize(new Dimension(0, UITheme.INPUT_HEIGHT-40));
         field.setFont(UITheme.FONT_INPUT);
         field.setBorder(UITheme.createEmptyBorder(UITheme.INPUT_PADDING));
         field.setBackground(UITheme.INPUT_BACKGROUND);
@@ -304,7 +366,7 @@ public class SignOutOptions extends JPanel {
             }
         };
 
-        dropdown.setPreferredSize(new Dimension(0, UITheme.INPUT_HEIGHT));
+        dropdown.setPreferredSize(new Dimension(0, UITheme.INPUT_HEIGHT-40));
         dropdown.setFont(UITheme.FONT_INPUT);
         dropdown.setBackground(UITheme.INPUT_BACKGROUND);
         dropdown.setForeground(UITheme.TEXT_PRIMARY);
@@ -398,10 +460,12 @@ public class SignOutOptions extends JPanel {
             if (name.isEmpty()) triggerNameError();
             if (location.isEmpty()) triggerLocationError();
             if (phone.isEmpty()) triggerPhoneError();
+            repaint();
             return;
         }
 
-        SignOutRecord record = new SignOutRecord(name, location, phone);
+        SignOutRecord record = new SignOutRecord(name, location, phone,
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), null);
         roster.signOut(record);
 
         clearField(nameField, "Enter full name");
@@ -411,6 +475,8 @@ public class SignOutOptions extends JPanel {
 
         nameField.grabFocus();
         nameField.setText("");
+        nameField.setForeground(UITheme.TEXT_PRIMARY);
+
     }
 
     private void handleSignIn() {
@@ -418,7 +484,7 @@ public class SignOutOptions extends JPanel {
 
         SignOutRecord selected = roster.getSelectedRecord();
         if (selected != null) {
-            roster.signIn(selected);
+            roster.signIn(selected, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         }
         pinField.setText("");
     }
@@ -508,6 +574,8 @@ public class SignOutOptions extends JPanel {
         Timer clearTimer = new Timer(2000, clearEvent -> {
             clearLocationError();
             ((Timer) clearEvent.getSource()).stop();
+            repaint();
+
         });
         clearTimer.setRepeats(false);
         clearTimer.start();
@@ -520,6 +588,8 @@ public class SignOutOptions extends JPanel {
         Timer clearTimer = new Timer(2000, clearEvent -> {
             clearPhoneError();
             ((Timer) clearEvent.getSource()).stop();
+            repaint();
+
         });
         clearTimer.setRepeats(false);
         clearTimer.start();
@@ -531,6 +601,8 @@ public class SignOutOptions extends JPanel {
         Timer clearTimer = new Timer(2000, clearEvent -> {
             clearNameError();
             ((Timer) clearEvent.getSource()).stop();
+            repaint();
+
         });
         clearTimer.setRepeats(false);
         clearTimer.start();
