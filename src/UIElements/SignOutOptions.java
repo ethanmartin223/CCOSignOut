@@ -2,6 +2,7 @@ package UIElements;
 
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.plaf.basic.ComboPopup;
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -69,7 +70,6 @@ public class SignOutOptions extends JPanel {
 
         userPins = loadUserPins(new File("user_pins.txt"));
 
-
         setLayout(new BorderLayout());
         setPreferredSize(UITheme.OPTIONS_PANEL_SIZE);
         setOpaque(false);
@@ -127,7 +127,6 @@ public class SignOutOptions extends JPanel {
         titleLabel.setFont(UITheme.FONT_SECTION_TITLE);
         titleLabel.setForeground(UITheme.TEXT_PRIMARY);
 
-
         JPanel titleContent = new JPanel();
         titleContent.setLayout(new BoxLayout(titleContent, BoxLayout.Y_AXIS));
         titleContent.setOpaque(false);
@@ -174,7 +173,6 @@ public class SignOutOptions extends JPanel {
 
         authPanel.add(createFieldGroup("User", userDropdown = createModernDropdown()));
         authPanel.add(Box.createVerticalStrut(UITheme.SPACING_LG));
-
 
         authPanel.add(createFieldGroup("PIN", pinField = createModernPasswordField()));
 
@@ -374,31 +372,230 @@ public class SignOutOptions extends JPanel {
         dropdown.setFocusable(false);
         dropdown.setOpaque(false);
 
-        dropdown.setUI(new javax.swing.plaf.basic.BasicComboBoxUI() {
-            @Override
-            protected JButton createArrowButton() {
-                JButton button = new JButton() {
-                    @Override
-                    public void paintComponent(Graphics g) {
-                        Graphics2D g2d = (Graphics2D) g.create();
-                        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                        // Draw arrow
-                        g2d.setColor(UITheme.TEXT_MUTED);
-                        int[] xPoints = {getWidth()/2 - 4, getWidth()/2 + 4, getWidth()/2};
-                        int[] yPoints = {getHeight()/2 - 2, getHeight()/2 - 2, getHeight()/2 + 3};
-                        g2d.fillPolygon(xPoints, yPoints, 3);
-
-                        g2d.dispose();
-                    }
-                };
-                button.setBorder(BorderFactory.createEmptyBorder());
-                button.setContentAreaFilled(false);
-                return button;
-            }
-        });
+        // Apply custom cell renderer for dropdown items
+        dropdown.setRenderer(new ModernComboBoxRenderer());
+        dropdown.setUI(new ModernComboBoxUI());
 
         return dropdown;
+    }
+
+    /** Custom ComboBox UI for modern styling */
+    private static class ModernComboBoxUI extends javax.swing.plaf.basic.BasicComboBoxUI {
+        @Override
+        protected JButton createArrowButton() {
+            JButton button = new JButton() {
+                @Override
+                public void paintComponent(Graphics g) {
+                    Graphics2D g2d = (Graphics2D) g.create();
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                    // Draw arrow
+                    g2d.setColor(UITheme.TEXT_MUTED);
+                    int[] xPoints = {getWidth()/2 - 4, getWidth()/2 + 4, getWidth()/2};
+                    int[] yPoints = {getHeight()/2 - 2, getHeight()/2 - 2, getHeight()/2 + 3};
+                    g2d.fillPolygon(xPoints, yPoints, 3);
+
+                    g2d.dispose();
+                }
+            };
+            button.setBorder(BorderFactory.createEmptyBorder());
+            button.setContentAreaFilled(false);
+            return button;
+        }
+
+        @Override
+        protected ComboPopup createPopup() {
+            return new ModernComboPopup(comboBox);
+        }
+    }
+
+    /** Custom ComboBox Popup for modern styling */
+    private static class ModernComboPopup extends javax.swing.plaf.basic.BasicComboPopup {
+        public ModernComboPopup(JComboBox combo) {
+            super(combo);
+        }
+
+        @Override
+        protected void configurePopup() {
+            super.configurePopup();
+
+            // Style the popup
+            setOpaque(false);
+            setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        }
+
+        @Override
+        protected void configureScroller() {
+            super.configureScroller();
+
+            if (scroller != null) {
+                scroller.setOpaque(false);
+                scroller.setBorder(BorderFactory.createEmptyBorder());
+                scroller.getViewport().setOpaque(false);
+
+                // Apply modern scrollbar styling
+                JScrollBar verticalScrollBar = scroller.getVerticalScrollBar();
+                verticalScrollBar.setUI(new ModernScrollBarUI());
+                verticalScrollBar.setPreferredSize(new Dimension(8, 0));
+            }
+        }
+
+        @Override
+        protected JList createList() {
+            JList list = super.createList();
+            list.setOpaque(false);
+            list.setBackground(UITheme.CARD_BACKGROUND);
+            list.setSelectionBackground(UITheme.SELECTION_BACKGROUND);
+            list.setSelectionForeground(UITheme.TEXT_PRIMARY);
+            list.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            return list;
+        }
+
+        @Override
+        public void paintComponent(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Paint rounded background
+            g2d.setColor(UITheme.CARD_BACKGROUND);
+            g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(),
+                    UITheme.BORDER_RADIUS_MEDIUM, UITheme.BORDER_RADIUS_MEDIUM));
+
+            // Paint border
+            g2d.setColor(UITheme.BORDER_DEFAULT);
+            g2d.setStroke(UITheme.BORDER_STROKE_DEFAULT);
+            g2d.draw(new RoundRectangle2D.Float(1, 1, getWidth() - 2, getHeight() - 2,
+                    UITheme.BORDER_RADIUS_MEDIUM, UITheme.BORDER_RADIUS_MEDIUM));
+
+            // Paint shadow
+            g2d.setColor(new Color(0, 0, 0, 20));
+            g2d.fill(new RoundRectangle2D.Float(2, 2, getWidth(), getHeight(),
+                    UITheme.BORDER_RADIUS_MEDIUM, UITheme.BORDER_RADIUS_MEDIUM));
+
+            g2d.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** Custom ListCellRenderer for dropdown items */
+    private static class ModernComboBoxRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value,
+                                                      int index, boolean isSelected, boolean cellHasFocus) {
+
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+            setFont(UITheme.FONT_INPUT);
+            setBorder(UITheme.createEmptyBorder(new Insets(10, 15, 10, 15)));
+            setOpaque(true);
+
+            if (isSelected) {
+                setBackground(UITheme.SELECTION_BACKGROUND);
+                setForeground(UITheme.TEXT_PRIMARY);
+            } else {
+                setBackground(UITheme.CARD_BACKGROUND);
+                setForeground(UITheme.TEXT_PRIMARY);
+            }
+
+            // Add hover effect
+            if (cellHasFocus && !isSelected) {
+                setBackground(UITheme.HOVER_BACKGROUND);
+            }
+
+            return this;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Paint background with slight rounding for list items
+            g2d.setColor(getBackground());
+            g2d.fill(new RoundRectangle2D.Float(2, 1, getWidth() - 4, getHeight() - 2,
+                    UITheme.BORDER_RADIUS_SMALL, UITheme.BORDER_RADIUS_SMALL));
+
+            g2d.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    /** Modern ScrollBar UI for dropdown scrollbar */
+    private static class ModernScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
+
+        @Override
+        protected void configureScrollBarColors() {
+            trackColor = UITheme.PANEL_BACKGROUND;
+            thumbColor = UITheme.BORDER_LIGHT;
+            thumbDarkShadowColor = UITheme.BORDER_DEFAULT;
+            thumbHighlightColor = UITheme.BORDER_FOCUS;
+            thumbLightShadowColor = UITheme.BORDER_LIGHT;
+        }
+
+        @Override
+        protected JButton createDecreaseButton(int orientation) {
+            return createInvisibleButton();
+        }
+
+        @Override
+        protected JButton createIncreaseButton(int orientation) {
+            return createInvisibleButton();
+        }
+
+        private JButton createInvisibleButton() {
+            JButton button = new JButton();
+            button.setPreferredSize(new Dimension(0, 0));
+            button.setMinimumSize(new Dimension(0, 0));
+            button.setMaximumSize(new Dimension(0, 0));
+            return button;
+        }
+
+        @Override
+        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2d.setColor(UITheme.PANEL_BACKGROUND);
+            g2d.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
+
+            g2d.dispose();
+        }
+
+        @Override
+        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+            if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) {
+                return;
+            }
+
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            Color thumbColor;
+            if (isDragging) {
+                thumbColor = UITheme.BORDER_FOCUS;
+            } else if (isThumbRollover()) {
+                thumbColor = UITheme.BORDER_DEFAULT;
+            } else {
+                thumbColor = UITheme.BORDER_LIGHT;
+            }
+
+            int margin = 1;
+            int x = thumbBounds.x + margin;
+            int y = thumbBounds.y + margin;
+            int width = thumbBounds.width - (margin * 2);
+            int height = thumbBounds.height - (margin * 2);
+
+            g2d.setColor(thumbColor);
+            g2d.fill(new RoundRectangle2D.Float(x, y, width, height, 4, 4));
+
+            g2d.dispose();
+        }
+
+        private boolean thumbRollover = false;
+
+        public boolean isThumbRollover() {
+            return thumbRollover;
+        }
     }
 
     private JButton createModernButton(String text, Color bgColor, Color textColor) {
@@ -476,7 +673,6 @@ public class SignOutOptions extends JPanel {
         nameField.grabFocus();
         nameField.setText("");
         nameField.setForeground(UITheme.TEXT_PRIMARY);
-
     }
 
     private void handleSignIn() {
@@ -515,7 +711,6 @@ public class SignOutOptions extends JPanel {
         String correctPin = userPins.get(user);
         if (!enteredPin.equals(correctPin)) {
             triggerPinError();
-
             pinField.setText("");
             return false;
         }
@@ -523,7 +718,6 @@ public class SignOutOptions extends JPanel {
         pinField.setText("");
         return true;
     }
-
 
     private void triggerPinError() {
         pinFieldError = true;

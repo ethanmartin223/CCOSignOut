@@ -360,14 +360,12 @@ public class SignOutRoster extends JList<SignOutRecord> {
                 thumbColor = UITheme.BORDER_LIGHT;
             }
 
-            // Add some margin to make thumb smaller and more modern
             int margin = 2;
             int x = thumbBounds.x + margin;
             int y = thumbBounds.y + margin;
             int width = thumbBounds.width - (margin * 2);
             int height = thumbBounds.height - (margin * 2);
 
-            // Paint rounded thumb
             g2d.setColor(thumbColor);
             g2d.fill(new RoundRectangle2D.Float(x, y, width, height, 6, 6));
 
@@ -417,6 +415,7 @@ public class SignOutRoster extends JList<SignOutRecord> {
 
             JPanel contentPanel = new JPanel(new BorderLayout(UITheme.SPACING_MD, 0));
             contentPanel.setOpaque(false);
+
 
             nameLabel = new JLabel();
             nameLabel.setFont(UITheme.FONT_LIST_ITEM_NAME);
@@ -501,3 +500,4 @@ public class SignOutRoster extends JList<SignOutRecord> {
         }
     }
 }
+

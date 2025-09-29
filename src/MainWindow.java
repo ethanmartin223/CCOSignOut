@@ -22,14 +22,11 @@ public class MainWindow extends JFrame {
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setAlwaysOnTop(true);
-//        setSize((int) (getToolkit().getScreenSize().width*.8), (int) (getToolkit().getScreenSize().height*.75));
+        setSize((int) (getToolkit().getScreenSize().width*.8), (int) (getToolkit().getScreenSize().height*.75));
 
         setLayout(new BorderLayout());
 
         getContentPane().setBackground(UITheme.MAIN_BACKGROUND);
-
-//        JPanel titleBar = createTitleBar();
-//        add(titleBar, BorderLayout.NORTH);
 
         // --- Roster + Search Panel ---
         roster = new SignOutRoster(null);
