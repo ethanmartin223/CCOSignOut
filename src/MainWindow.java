@@ -15,9 +15,9 @@ public class MainWindow extends JFrame {
     public MainWindow() {
         super();
 
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gd = ge.getDefaultScreenDevice();
-        gd.setFullScreenWindow(this);
+//        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+//        GraphicsDevice gd = ge.getDefaultScreenDevice();
+//        gd.setFullScreenWindow(this);
 
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

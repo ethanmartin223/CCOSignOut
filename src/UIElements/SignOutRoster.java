@@ -299,7 +299,7 @@ public class SignOutRoster extends JList<SignOutRecord> {
     }
 
     /** Custom ScrollBar UI that matches the modern theme */
-    private static class ModernScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
+    static class ModernScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
 
         @Override
         protected void configureScrollBarColors() {

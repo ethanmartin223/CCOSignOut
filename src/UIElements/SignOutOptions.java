@@ -2,11 +2,10 @@ package UIElements;
 
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.plaf.basic.ComboPopup;
 import java.awt.*;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,6 +13,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,11 +21,14 @@ import java.util.Map;
 public class SignOutOptions extends JPanel {
 
     private SignOutRoster roster;
-    private JTextField nameField;
+    private UserBubblePanel nameField;
     private JTextField locationField;
     private JTextField phoneField;
     private JComboBox<String> userDropdown;
     private JPasswordField pinField;
+    private JCheckBox noCacCheckbox;
+    private JCheckBox familyLeaveCheckbox;
+    private JCheckBox overnightLeaveCheckbox;
 
     private Map<String, String> userPins;
     private boolean pinFieldError = false;
@@ -46,9 +49,9 @@ public class SignOutOptions extends JPanel {
 
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) continue; // skip empty or comment lines
+                if (line.isEmpty() || line.startsWith("#")) continue;
 
-                String[] parts = line.split(":", 2); // only split at the first ':'
+                String[] parts = line.split(":", 2);
                 if (parts.length == 2) {
                     String name = parts[0].trim();
                     String pin = parts[1].trim();
@@ -78,16 +81,9 @@ public class SignOutOptions extends JPanel {
         mainPanel.setLayout(new BorderLayout(0, UITheme.SPACING_XL));
         mainPanel.setBorder(UITheme.createEmptyBorder(UITheme.PANEL_PADDING));
 
-        // Title section
         JPanel titleSection = createTitleSection();
-
-        // Form section
         JPanel formSection = createFormSection();
-
-        // Auth section
         JPanel authSection = createAuthSection();
-
-        // Button section
         JPanel buttonSection = createButtonSection();
 
         mainPanel.add(titleSection, BorderLayout.NORTH);
@@ -97,6 +93,7 @@ public class SignOutOptions extends JPanel {
         contentPanel.add(formSection, BorderLayout.NORTH);
         contentPanel.add(authSection, BorderLayout.CENTER);
         contentPanel.add(buttonSection, BorderLayout.SOUTH);
+
 
         nameField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
@@ -121,7 +118,7 @@ public class SignOutOptions extends JPanel {
     private JPanel createTitleSection() {
         JPanel titlePanel = new JPanel(new BorderLayout());
         titlePanel.setOpaque(false);
-        titlePanel.setBorder(UITheme.createEmptyBorder(new Insets(0, 0, UITheme.SPACING_XL, 0)));
+        titlePanel.setBorder(UITheme.createEmptyBorder(new Insets(0, 0, UITheme.SPACING_SM, 0)));
 
         JLabel titleLabel = new JLabel("Sign Out");
         titleLabel.setFont(UITheme.FONT_SECTION_TITLE);
@@ -131,7 +128,6 @@ public class SignOutOptions extends JPanel {
         titleContent.setLayout(new BoxLayout(titleContent, BoxLayout.Y_AXIS));
         titleContent.setOpaque(false);
         titleContent.add(titleLabel);
-        titleContent.add(Box.createVerticalStrut(UITheme.SPACING_SM));
 
         titlePanel.add(titleContent, BorderLayout.WEST);
         return titlePanel;
@@ -142,15 +138,142 @@ public class SignOutOptions extends JPanel {
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.setOpaque(false);
 
-        formPanel.add(createFieldGroup("Names", nameField = createModernTextField("Scan CAC")));
-        formPanel.add(Box.createVerticalStrut(UITheme.SPACING_LG));
+        nameField = new UserBubblePanel();
+        JScrollPane scrollPane = new JScrollPane(nameField);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setBackground(UITheme.PANEL_BACKGROUND);
+        scrollPane.setPreferredSize(new Dimension(50, UITheme.INPUT_HEIGHT+15));
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        scrollPane.getHorizontalScrollBar().setUnitIncrement(6);
+        scrollPane.getHorizontalScrollBar().setFocusable(false);
+        scrollPane.getVerticalScrollBar().setFocusable(false);
+        SwingUtilities.invokeLater(() -> applyModernScrollbarStyling(scrollPane));
+        scrollPane.getViewport().setBackground(UITheme.PANEL_BACKGROUND);
+        nameField.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                System.out.println("TEST");
+                JScrollBar horizontalScrollBar = scrollPane.getHorizontalScrollBar();
+                horizontalScrollBar.setValue(horizontalScrollBar.getMaximum());
+            }
+        });
+
+        CardScannerField scannerField = new CardScannerField(nameField);
+        scannerField.setMaximumSize(new Dimension(400, UITheme.INPUT_HEIGHT));
+        formPanel.add(scannerField);
+
+        formPanel.add(Box.createVerticalStrut(UITheme.SPACING_XS));
+
+        formPanel.add(scrollPane);
+        formPanel.add(Box.createVerticalStrut(UITheme.SPACING_MD));
 
         formPanel.add(createFieldGroup("Location", locationField = createModernTextField("Where are you going?")));
+        formPanel.add(Box.createVerticalStrut(UITheme.SPACING_SM));
+        formPanel.add(createCheckboxPanel());
         formPanel.add(Box.createVerticalStrut(UITheme.SPACING_LG));
 
         formPanel.add(createFieldGroup("Phone Number", phoneField = createModernTextField("Contact number")));
 
         return formPanel;
+    }
+
+    private void applyModernScrollbarStyling(JScrollPane scrollPane) {
+        // Style the vertical scrollbar
+        JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
+        verticalScrollBar.setUI(new SignOutRoster.ModernScrollBarUI());
+        verticalScrollBar.setPreferredSize(new Dimension(12, 0));
+
+        // Style the horizontal scrollbar
+        JScrollBar horizontalScrollBar = scrollPane.getHorizontalScrollBar();
+        horizontalScrollBar.setUI(new SignOutRoster.ModernScrollBarUI());
+        horizontalScrollBar.setPreferredSize(new Dimension(0, 12));
+
+        // Remove scrollpane borders and styling
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setBackground(UITheme.PANEL_BACKGROUND);
+        scrollPane.getViewport().setBackground(UITheme.PANEL_BACKGROUND);
+    }
+
+    private JPanel createCheckboxPanel() {
+        JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, UITheme.SPACING_MD, 0));
+        checkboxPanel.setOpaque(false);
+
+        familyLeaveCheckbox = createModernCheckbox("Family Leave");
+        overnightLeaveCheckbox = createModernCheckbox("Overnight Leave");
+
+
+        checkboxPanel.add(familyLeaveCheckbox);
+        checkboxPanel.add(overnightLeaveCheckbox);
+
+        return checkboxPanel;
+    }
+
+    private JCheckBox createModernCheckbox(String text) {
+        JCheckBox checkbox = new JCheckBox(text) {
+            @Override
+            public void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Draw custom checkbox
+                int boxSize = 18;
+                int boxX = 0;
+                int boxY = (getHeight() - boxSize) / 2;
+
+                // Draw checkbox background
+                g2d.setColor(UITheme.INPUT_BACKGROUND);
+                g2d.fill(new RoundRectangle2D.Float(boxX, boxY, boxSize, boxSize,
+                        UITheme.BORDER_RADIUS_SMALL, UITheme.BORDER_RADIUS_SMALL));
+
+                // Draw checkbox border
+                if (isSelected()) {
+                    g2d.setColor(UITheme.ACCENT_BLUE);
+                    g2d.setStroke(UITheme.BORDER_STROKE_FOCUS);
+                } else {
+                    g2d.setColor(UITheme.BORDER_LIGHT);
+                    g2d.setStroke(UITheme.BORDER_STROKE_DEFAULT);
+                }
+                g2d.draw(new RoundRectangle2D.Float(boxX + 0.5f, boxY + 0.5f, boxSize - 1, boxSize - 1,
+                        UITheme.BORDER_RADIUS_SMALL, UITheme.BORDER_RADIUS_SMALL));
+
+                // Draw checkmark if selected
+                if (isSelected()) {
+                    g2d.setColor(UITheme.ACCENT_BLUE);
+                    g2d.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+                    int checkX = boxX + 4;
+                    int checkY = boxY + 9;
+                    g2d.drawLine(checkX, checkY, checkX + 3, checkY + 3);
+                    g2d.drawLine(checkX + 3, checkY + 3, checkX + 9, checkY - 3);
+                }
+
+                // Draw text
+                g2d.setFont(getFont());
+                g2d.setColor(getForeground());
+                FontMetrics fm = g2d.getFontMetrics();
+                int textX = boxX + boxSize + 8;
+                int textY = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2d.drawString(getText(), textX, textY);
+
+                g2d.dispose();
+            }
+        };
+
+        checkbox.setFont(UITheme.FONT_INPUT);
+        checkbox.setForeground(UITheme.TEXT_LIGHT);
+        checkbox.setOpaque(false);
+        checkbox.setFocusPainted(false);
+        checkbox.setFocusable(false);
+        checkbox.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        checkbox.setContentAreaFilled(false);
+        checkbox.setBorderPainted(false);
+
+        // Calculate preferred size based on text
+        FontMetrics fm = checkbox.getFontMetrics(UITheme.FONT_INPUT);
+        int textWidth = fm.stringWidth(text);
+        checkbox.setPreferredSize(new Dimension(textWidth + 30, 28));
+
+        return checkbox;
     }
 
     private JPanel createAuthSection() {
@@ -216,12 +339,10 @@ public class SignOutOptions extends JPanel {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // White background with rounded corners
                 g2d.setColor(UITheme.CARD_BACKGROUND);
                 g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(),
                         UITheme.BORDER_RADIUS_LARGE, UITheme.BORDER_RADIUS_LARGE));
 
-                // Subtle border
                 g2d.setColor(UITheme.BORDER_DEFAULT);
                 g2d.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1,
                         UITheme.BORDER_RADIUS_LARGE, UITheme.BORDER_RADIUS_LARGE));
@@ -274,7 +395,6 @@ public class SignOutOptions extends JPanel {
             }
         });
 
-        // Placeholder functionality
         setupPlaceholder(field, placeholder);
         return field;
     }
@@ -286,13 +406,11 @@ public class SignOutOptions extends JPanel {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Set background color based on error state
                 Color bgColor = pinFieldError ? new Color(255, 240, 240) : getBackground();
                 g2d.setColor(bgColor);
                 g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(),
                         UITheme.BORDER_RADIUS_MEDIUM, UITheme.BORDER_RADIUS_MEDIUM));
 
-                // Set border color based on error state
                 Color borderColor;
                 if (hasFocus()) {
                     borderColor = UITheme.BORDER_FOCUS;
@@ -372,14 +490,12 @@ public class SignOutOptions extends JPanel {
         dropdown.setFocusable(false);
         dropdown.setOpaque(false);
 
-        // Apply custom cell renderer for dropdown items
         dropdown.setRenderer(new ModernComboBoxRenderer());
         dropdown.setUI(new ModernComboBoxUI());
 
         return dropdown;
     }
 
-    /** Custom ComboBox UI for modern styling */
     private static class ModernComboBoxUI extends javax.swing.plaf.basic.BasicComboBoxUI {
         @Override
         protected JButton createArrowButton() {
@@ -389,7 +505,6 @@ public class SignOutOptions extends JPanel {
                     Graphics2D g2d = (Graphics2D) g.create();
                     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                    // Draw arrow
                     g2d.setColor(UITheme.TEXT_MUTED);
                     int[] xPoints = {getWidth()/2 - 4, getWidth()/2 + 4, getWidth()/2};
                     int[] yPoints = {getHeight()/2 - 2, getHeight()/2 - 2, getHeight()/2 + 3};
@@ -409,7 +524,6 @@ public class SignOutOptions extends JPanel {
         }
     }
 
-    /** Custom ComboBox Popup for modern styling */
     private static class ModernComboPopup extends javax.swing.plaf.basic.BasicComboPopup {
         public ModernComboPopup(JComboBox combo) {
             super(combo);
@@ -419,7 +533,6 @@ public class SignOutOptions extends JPanel {
         protected void configurePopup() {
             super.configurePopup();
 
-            // Style the popup
             setOpaque(false);
             setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         }
@@ -433,7 +546,6 @@ public class SignOutOptions extends JPanel {
                 scroller.setBorder(BorderFactory.createEmptyBorder());
                 scroller.getViewport().setOpaque(false);
 
-                // Apply modern scrollbar styling
                 JScrollBar verticalScrollBar = scroller.getVerticalScrollBar();
                 verticalScrollBar.setUI(new ModernScrollBarUI());
                 verticalScrollBar.setPreferredSize(new Dimension(8, 0));
@@ -456,18 +568,15 @@ public class SignOutOptions extends JPanel {
             Graphics2D g2d = (Graphics2D) g.create();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Paint rounded background
             g2d.setColor(UITheme.CARD_BACKGROUND);
             g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(),
                     UITheme.BORDER_RADIUS_MEDIUM, UITheme.BORDER_RADIUS_MEDIUM));
 
-            // Paint border
             g2d.setColor(UITheme.BORDER_DEFAULT);
             g2d.setStroke(UITheme.BORDER_STROKE_DEFAULT);
             g2d.draw(new RoundRectangle2D.Float(1, 1, getWidth() - 2, getHeight() - 2,
                     UITheme.BORDER_RADIUS_MEDIUM, UITheme.BORDER_RADIUS_MEDIUM));
 
-            // Paint shadow
             g2d.setColor(new Color(0, 0, 0, 20));
             g2d.fill(new RoundRectangle2D.Float(2, 2, getWidth(), getHeight(),
                     UITheme.BORDER_RADIUS_MEDIUM, UITheme.BORDER_RADIUS_MEDIUM));
@@ -477,7 +586,6 @@ public class SignOutOptions extends JPanel {
         }
     }
 
-    /** Custom ListCellRenderer for dropdown items */
     private static class ModernComboBoxRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value,
@@ -497,7 +605,6 @@ public class SignOutOptions extends JPanel {
                 setForeground(UITheme.TEXT_PRIMARY);
             }
 
-            // Add hover effect
             if (cellHasFocus && !isSelected) {
                 setBackground(UITheme.HOVER_BACKGROUND);
             }
@@ -510,7 +617,6 @@ public class SignOutOptions extends JPanel {
             Graphics2D g2d = (Graphics2D) g.create();
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Paint background with slight rounding for list items
             g2d.setColor(getBackground());
             g2d.fill(new RoundRectangle2D.Float(2, 1, getWidth() - 4, getHeight() - 2,
                     UITheme.BORDER_RADIUS_SMALL, UITheme.BORDER_RADIUS_SMALL));
@@ -520,7 +626,6 @@ public class SignOutOptions extends JPanel {
         }
     }
 
-    /** Modern ScrollBar UI for dropdown scrollbar */
     private static class ModernScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
 
         @Override
@@ -665,13 +770,17 @@ public class SignOutOptions extends JPanel {
                 new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), null);
         roster.signOut(record);
 
-        clearField(nameField, "Enter full name");
+        nameField.removeAll();
         clearField(locationField, "Where are you going?");
         clearField(phoneField, "Contact number");
         pinField.setText("");
 
+        // Clear checkboxes
+        noCacCheckbox.setSelected(false);
+        familyLeaveCheckbox.setSelected(false);
+        overnightLeaveCheckbox.setSelected(false);
+
         nameField.grabFocus();
-        nameField.setText("");
         nameField.setForeground(UITheme.TEXT_PRIMARY);
     }
 
@@ -690,6 +799,15 @@ public class SignOutOptions extends JPanel {
         if (text.equals("Scan CAC") || text.equals("Where are you going?") || text.equals("Contact number")) {
             return "";
         }
+        return text;
+    }
+
+    private String getFieldText(UserBubblePanel field) {
+        String text = "";
+        ArrayList<String> users = (ArrayList<String>) field.getUsers();
+        for (int i=0; i< field.getUsers().size(); i++) {
+            text += users.get(i)+(i!=field.getUsers().size()?", ":"");
+        };
         return text;
     }
 
@@ -752,6 +870,16 @@ public class SignOutOptions extends JPanel {
     }
 
     private void setErrorBorder(JTextField pinField) {
+        EmptyBorder emptyBorder = new MatteBorder(3,3,3,3, UITheme.ACCENT_RED);
+        EmptyBorder emptyBorder2 = new EmptyBorder(
+                UITheme.INPUT_PADDING.top-3,
+                UITheme.INPUT_PADDING.left-3,
+                UITheme.INPUT_PADDING.bottom-3,
+                UITheme.INPUT_PADDING.right-3);
+        pinField.setBorder(new CompoundBorder(emptyBorder, emptyBorder2));
+    }
+
+    private void setErrorBorder(UserBubblePanel pinField) {
         EmptyBorder emptyBorder = new MatteBorder(3,3,3,3, UITheme.ACCENT_RED);
         EmptyBorder emptyBorder2 = new EmptyBorder(
                 UITheme.INPUT_PADDING.top-3,
