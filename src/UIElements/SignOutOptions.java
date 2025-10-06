@@ -2,7 +2,6 @@ package UIElements;
 
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.plaf.basic.ComboPopup;
 import java.awt.*;
 import java.awt.event.*;
@@ -12,7 +11,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,7 +24,6 @@ public class SignOutOptions extends JPanel {
     private JTextField phoneField;
     private JComboBox<String> userDropdown;
     private JPasswordField pinField;
-    private JCheckBox noCacCheckbox;
     private JCheckBox familyLeaveCheckbox;
     private JCheckBox overnightLeaveCheckbox;
 
@@ -291,7 +288,6 @@ public class SignOutOptions extends JPanel {
         titleContent.setLayout(new BorderLayout());
         titleContent.setOpaque(false);
         titleContent.add(titleLabel);
-        titleContent.setBorder(UITheme.createEmptyBorder(new Insets(0, 0, UITheme.SPACING_XL, 0)));
         authPanel.add(titleContent);
 
         authPanel.add(createFieldGroup("User", userDropdown = createModernDropdown()));
@@ -766,22 +762,33 @@ public class SignOutOptions extends JPanel {
             return;
         }
 
-        SignOutRecord record = new SignOutRecord(name, location, phone,
+        SignOutRecord record = new SignOutRecord(name, location, phoneNumberFormatted(phone),
                 new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), null);
         roster.signOut(record);
 
-        nameField.removeAll();
+        nameField.clearAll();
         clearField(locationField, "Where are you going?");
         clearField(phoneField, "Contact number");
         pinField.setText("");
 
         // Clear checkboxes
-        noCacCheckbox.setSelected(false);
         familyLeaveCheckbox.setSelected(false);
         overnightLeaveCheckbox.setSelected(false);
 
         nameField.grabFocus();
         nameField.setForeground(UITheme.TEXT_PRIMARY);
+
+        repaint();
+    }
+
+    private String phoneNumberFormatted(String input) {
+        if (input == null) return "";
+        String phoneNumber = input.replaceAll("[^0-9]", "");
+        if (phoneNumber.length()>10)
+            phoneNumber = phoneNumber.substring(phoneNumber.length()-10);
+        if (phoneNumber.length()==10)
+            phoneNumber = phoneNumber.substring(0,3)+"-"+phoneNumber.substring(3,6)+"-"+phoneNumber.substring(6);
+        return phoneNumber;
     }
 
     private void handleSignIn() {
@@ -869,24 +876,65 @@ public class SignOutOptions extends JPanel {
         shakeTimer.start();
     }
 
+    public class RoundedErrorBorder implements Border {
+
+        private final Color color;
+        private final int thickness;
+        private final int arc;      // corner radius
+        private final Insets padding;
+
+        public RoundedErrorBorder(Color color, int thickness, int arc, Insets padding) {
+            this.color = color;
+            this.thickness = thickness;
+            this.arc = arc;
+            this.padding = padding;
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(
+                    padding.top + thickness,
+                    padding.left + thickness,
+                    padding.bottom + thickness,
+                    padding.right + thickness
+            );
+        }
+
+        @Override
+        public boolean isBorderOpaque() {
+            return false;
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(thickness));
+
+            // Draw rounded rectangle
+            g2.drawRoundRect(
+                    x + thickness / 2,
+                    y + thickness / 2,
+                    width - thickness,
+                    height - thickness,
+                    arc, arc
+            );
+            g2.dispose();
+        }
+    }
+
     private void setErrorBorder(JTextField pinField) {
-        EmptyBorder emptyBorder = new MatteBorder(3,3,3,3, UITheme.ACCENT_RED);
-        EmptyBorder emptyBorder2 = new EmptyBorder(
-                UITheme.INPUT_PADDING.top-3,
-                UITheme.INPUT_PADDING.left-3,
-                UITheme.INPUT_PADDING.bottom-3,
-                UITheme.INPUT_PADDING.right-3);
-        pinField.setBorder(new CompoundBorder(emptyBorder, emptyBorder2));
+        pinField.setBorder(
+                new RoundedErrorBorder(UITheme.ACCENT_RED, 3, 6, new Insets(0,12,0,0))
+        );
     }
 
     private void setErrorBorder(UserBubblePanel pinField) {
-        EmptyBorder emptyBorder = new MatteBorder(3,3,3,3, UITheme.ACCENT_RED);
-        EmptyBorder emptyBorder2 = new EmptyBorder(
-                UITheme.INPUT_PADDING.top-3,
-                UITheme.INPUT_PADDING.left-3,
-                UITheme.INPUT_PADDING.bottom-3,
-                UITheme.INPUT_PADDING.right-3);
-        pinField.setBorder(new CompoundBorder(emptyBorder, emptyBorder2));
+        pinField.setBorder(
+                new RoundedErrorBorder(UITheme.ACCENT_RED, 3, 6,  new Insets(0,0,0,0))
+        );
     }
 
     private void triggerLocationError() {

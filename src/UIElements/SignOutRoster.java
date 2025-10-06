@@ -311,6 +311,7 @@ public class SignOutRoster extends JList<SignOutRecord> {
             thumbLightShadowColor = UITheme.BORDER_LIGHT;
         }
 
+
         @Override
         protected JButton createDecreaseButton(int orientation) {
             return createInvisibleButton();
@@ -326,6 +327,7 @@ public class SignOutRoster extends JList<SignOutRecord> {
             button.setPreferredSize(new Dimension(0, 0));
             button.setMinimumSize(new Dimension(0, 0));
             button.setMaximumSize(new Dimension(0, 0));
+            button.setFocusable(false);
             return button;
         }
 

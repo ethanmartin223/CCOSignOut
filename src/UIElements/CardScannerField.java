@@ -101,12 +101,13 @@ public class CardScannerField extends JComponent implements FocusListener, KeyLi
         if (manualEntryMode) {
             // Switch to manual entry mode
             noCacTextField.setVisible(true);
-            noCacTextField.requestFocusInWindow();
+            noCacTextField.grabFocus();
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             setFocusable(false);
         } else {
             // Switch back to scanner mode
             noCacTextField.setVisible(false);
+            noCacTextField.setText("");
             setCursor(new Cursor(Cursor.TEXT_CURSOR));
             setFocusable(true);
             grabFocus();
